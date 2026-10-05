@@ -102,8 +102,6 @@ section{padding:88px 0}section.alt{background:var(--bg)}
 .obj dl div{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:baseline;padding-top:8px;border-top:1px solid var(--line)}
 .obj dt{margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .obj dd{margin:0;font-size:15px;color:var(--ink);font-weight:500}
-.obj .now{display:inline-block;margin-top:12px;font-size:12px;font-weight:700;background:var(--accent);color:var(--ink);padding:3px 8px;border-radius:3px;align-self:flex-start}
-.obj.done .now{background:#d9f0df;color:#1a6b35}
 .note{margin-top:22px;font-size:14px;color:var(--muted)}
 .todo{display:inline-block;background:#fff4d6;border:1px dashed #d9a400;color:#7a5a00;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:600}
 
