@@ -18,18 +18,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Decode binary assets
+      - name: Fetch Inter fonts
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          for f in fonts/*.ttf.b64 img/*.jpg.b64; do
-            out="${f%.b64}"
-            base64 -d "$f" > "$out"
-            echo "decoded $out ($(wc -c < "$out") bytes)"
-          done
-          rm -f fonts/*.ttf.b64 img/*.jpg.b64 test.bin
-          touch .nojekyll
-          printf 'evorie.ru' > CNAME
+          mkdir -p fonts
+          curl -fsSL -o /tmp/inter.zip https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
+          unzip -qo /tmp/inter.zip -d /tmp/inter
+          cp "$(find /tmp/inter -name 'Inter-Regular.ttf' | head -1)" fonts/Inter-400.ttf
+          cp "$(find /tmp/inter -name 'Inter-Medium.ttf' | head -1)" fonts/Inter-500.ttf
+          cp "$(find /tmp/inter -name 'Inter-SemiBold.ttf' | head -1)" fonts/Inter-600.ttf
+          cp "$(find /tmp/inter -name 'Inter-Bold.ttf' | head -1)" fonts/Inter-700.ttf
+          cp "$(find /tmp/inter -name 'Inter-ExtraBold.ttf' | head -1)" fonts/Inter-800.ttf
+          ls -la fonts/
+      - name: Decode images from base64
+        run: |
+          set -euo pipefail
+          python3 << 'PY'
+          from pathlib import Path
+          import base64
+          for name in ['diplom.jpg','director-site.jpg','director.jpg','team-congress-v.jpg','team-congress.jpg']:
+              p = Path(f'img/{name}.b64')
+              data = p.read_text()
+              out = Path(f'img/{name}')
+              out.write_bytes(base64.b64decode(data))
+              print('wrote', out, out.stat().st_size)
+              p.unlink()
+          Path('test.bin').unlink(missing_ok=True)
+          Path('.nojekyll').write_text('')
+          Path('CNAME').write_text('evorie.ru')
+          PY
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
