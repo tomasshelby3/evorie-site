@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - '_staging/**'
+      - '_staging/READY'
 jobs:
   assemble:
     runs-on: ubuntu-latest
@@ -14,17 +14,31 @@ jobs:
       - name: Assemble
         run: |
           set -euo pipefail
+          if [[ ! -f _staging/READY ]]; then
+            echo "No READY marker; skip"
+            exit 0
+          fi
           if ls _staging/logo.part* >/dev/null 2>&1; then
+            n=$(ls _staging/logo.part* | wc -l)
+            echo "logo parts: $n"
             cat $(ls _staging/logo.part* | sort) > img/logo.svg
             wc -c img/logo.svg
           fi
           if ls _staging/d.part* >/dev/null 2>&1; then
+            n=$(ls _staging/d.part* | wc -l)
+            echo "d parts: $n"
+            test "$n" -eq 55
             cat $(ls _staging/d.part* | sort) > img/director.jpg.b64
             wc -c img/director.jpg.b64
+            test $(wc -c < img/director.jpg.b64) -eq 109680
           fi
           if ls _staging/ds.part* >/dev/null 2>&1; then
+            n=$(ls _staging/ds.part* | wc -l)
+            echo "ds parts: $n"
+            test "$n" -eq 67
             cat $(ls _staging/ds.part* | sort) > img/director-site.jpg.b64
             wc -c img/director-site.jpg.b64
+            test $(wc -c < img/director-site.jpg.b64) -eq 132208
           fi
           rm -rf _staging
           git config user.name "github-actions[bot]"
