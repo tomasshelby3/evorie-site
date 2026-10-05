@@ -18,6 +18,22 @@ jobs:
             echo "No READY marker; skip"
             exit 0
           fi
+          # Emergency restore path: mid-size director from restore.part* (does not wipe HQ d/ds staging)
+          if ls _staging/restore.part* >/dev/null 2>&1; then
+            n=$(ls _staging/restore.part* | wc -l)
+            echo "restore parts: $n"
+            cat $(ls _staging/restore.part* | sort) > img/director.jpg.b64
+            wc -c img/director.jpg.b64
+            test $(wc -c < img/director.jpg.b64) -eq 13760
+            rm -f _staging/restore.part* _staging/READY
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git status
+            git commit -m "fix: restore valid mid-size director.jpg.b64 (13760)" || exit 0
+            git push
+            exit 0
+          fi
           if ls _staging/logo.part* >/dev/null 2>&1; then
             n=$(ls _staging/logo.part* | wc -l)
             echo "logo parts: $n"
