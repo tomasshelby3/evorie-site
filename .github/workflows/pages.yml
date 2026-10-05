@@ -29,8 +29,7 @@ jobs:
           cp "$(find /tmp/inter -name 'Inter-SemiBold.ttf' | head -1)" fonts/Inter-600.ttf
           cp "$(find /tmp/inter -name 'Inter-Bold.ttf' | head -1)" fonts/Inter-700.ttf
           cp "$(find /tmp/inter -name 'Inter-ExtraBold.ttf' | head -1)" fonts/Inter-800.ttf
-          ls -la fonts/
-      - name: Assemble and decode images
+      - name: Decode images
         run: |
           set -euo pipefail
           python3 << 'PY'
