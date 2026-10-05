@@ -8,22 +8,22 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble assets from staging parts
+      - name: Assemble
         run: |
           set -euo pipefail
-          if ls _staging/logo.svg.part* >/dev/null 2>&1; then
-            cat _staging/logo.svg.part* > img/logo.svg
+          if ls _staging/logo.part* >/dev/null 2>&1; then
+            cat $(ls _staging/logo.part* | sort) > img/logo.svg
           fi
-          if ls _staging/director.jpg.b64.part* >/dev/null 2>&1; then
-            cat _staging/director.jpg.b64.part* > img/director.jpg.b64
+          if ls _staging/d.part* >/dev/null 2>&1; then
+            cat $(ls _staging/d.part* | sort) > img/director.jpg.b64
           fi
-          if ls _staging/director-site.jpg.b64.part* >/dev/null 2>&1; then
-            cat _staging/director-site.jpg.b64.part* > img/director-site.jpg.b64
+          if ls _staging/ds.part* >/dev/null 2>&1; then
+            cat $(ls _staging/ds.part* | sort) > img/director-site.jpg.b64
           fi
           rm -rf _staging
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git status
-          git commit -m "fix: full logo.svg + higher-quality director photos" || exit 0
+          git commit -m "fix: assemble logo + director assets from staging" || exit 0
           git push
