@@ -1,0 +1,29 @@
+name: assemble-evori-assets
+on:
+  workflow_dispatch:
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble assets from staging parts
+        run: |
+          set -euo pipefail
+          if ls _staging/logo.svg.part* >/dev/null 2>&1; then
+            cat _staging/logo.svg.part* > img/logo.svg
+          fi
+          if ls _staging/director.jpg.b64.part* >/dev/null 2>&1; then
+            cat _staging/director.jpg.b64.part* > img/director.jpg.b64
+          fi
+          if ls _staging/director-site.jpg.b64.part* >/dev/null 2>&1; then
+            cat _staging/director-site.jpg.b64.part* > img/director-site.jpg.b64
+          fi
+          rm -rf _staging
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status
+          git commit -m "fix: full logo.svg + higher-quality director photos" || exit 0
+          git push
