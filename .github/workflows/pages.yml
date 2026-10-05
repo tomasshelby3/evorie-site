@@ -30,22 +30,32 @@ jobs:
           cp "$(find /tmp/inter -name 'Inter-Bold.ttf' | head -1)" fonts/Inter-700.ttf
           cp "$(find /tmp/inter -name 'Inter-ExtraBold.ttf' | head -1)" fonts/Inter-800.ttf
           ls -la fonts/
-      - name: Decode images from base64
+      - name: Assemble and decode images
         run: |
           set -euo pipefail
           python3 << 'PY'
           from pathlib import Path
           import base64
+          img = Path('img')
           for name in ['diplom.jpg','director-site.jpg','director.jpg','team-congress-v.jpg','team-congress.jpg']:
-              p = Path(f'img/{name}.b64')
-              data = p.read_text()
-              out = Path(f'img/{name}')
+              parts = sorted(img.glob(f'{name}.b64.p*'))
+              if parts:
+                  data = ''.join(p.read_text() for p in parts)
+                  for p in parts:
+                      p.unlink()
+              else:
+                  p = img / f'{name}.b64'
+                  if not p.exists():
+                      print('MISSING', name)
+                      continue
+                  data = p.read_text()
+                  p.unlink()
+              out = img / name
               out.write_bytes(base64.b64decode(data))
               print('wrote', out, out.stat().st_size)
-              p.unlink()
           Path('test.bin').unlink(missing_ok=True)
           Path('.nojekyll').write_text('')
-          Path('CNAME').write_text('evorie.ru')
+          Path('CNAME').write_text('evorie.ru\n')
           PY
       - name: Setup Pages
         uses: actions/configure-pages@v5
