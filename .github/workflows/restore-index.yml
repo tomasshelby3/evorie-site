@@ -1,0 +1,44 @@
+name: Restore index.html from git
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/restore-index.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore full index.html
+        run: |
+          set -euo pipefail
+          # Known-good restored tree (full page, no status badges)
+          git show ac2e85b133375e82855637ef45e9d9a4c75bc693:index.html > index.html
+          # Heading + nav per latest request
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          t = p.read_text(encoding='utf-8')
+          t = t.replace('Наши последние проекты', 'Свежие проекты')
+          t = t.replace('<a href="#objects">Проекты</a>', '<a href="#objects">Свежие проекты</a>')
+          assert t.strip().endswith('</html>')
+          assert 'PLACEHOLDER' not in t
+          assert len(t.encode()) > 15000
+          p.write_text(t, encoding='utf-8')
+          print('index bytes', p.stat().st_size)
+          PY
+          git config user.name "evori-restore-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "index already matches target"
+          else
+            git commit -m "restore: full index.html + заголовок «Свежие проекты»"
+            git push
+          fi
