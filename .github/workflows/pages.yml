@@ -34,25 +34,19 @@ jobs:
           set -euo pipefail
           python3 << 'PY'
           from pathlib import Path
-          import base64
+          import base64, re
           img = Path('img')
-          for name in ['diplom.jpg','director-site.jpg','director.jpg','team-congress-v.jpg','team-congress.jpg']:
-              parts = sorted(img.glob(f'{name}.b64.p*'))
-              if parts:
-                  data = ''.join(p.read_text() for p in parts)
-                  for p in parts:
-                      p.unlink()
-              else:
-                  p = img / f'{name}.b64'
-                  if not p.exists():
-                      print('MISSING', name)
-                      continue
-                  data = p.read_text()
-                  p.unlink()
-              out = img / name
-              out.write_bytes(base64.b64decode(data))
+          for p in sorted(img.glob('*.b64')):
+              data = re.sub(r'\s+', '', p.read_text())
+              pad = (-len(data)) % 4
+              out = img / p.name[:-4]  # strip .b64
+              out.write_bytes(base64.b64decode(data + ('=' * pad)))
+              p.unlink()
               print('wrote', out, out.stat().st_size)
-          Path('test.bin').unlink(missing_ok=True)
+          for junk in list(img.glob('*.b64.p*')) + [Path('test.bin'), Path('img/_schema_probe.txt')]:
+              if junk.exists():
+                  junk.unlink()
+                  print('removed', junk)
           Path('.nojekyll').write_text('')
           Path('CNAME').write_text('evorie.ru\n')
           PY
