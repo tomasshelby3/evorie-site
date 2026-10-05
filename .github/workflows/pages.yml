@@ -38,6 +38,9 @@ jobs:
           img = Path('img')
           for p in sorted(img.glob('*.b64')):
               data = re.sub(r'\s+', '', p.read_text())
+              # Python rejects data-char count == 1 (mod 4); drop orphan char
+              if len(data) % 4 == 1:
+                  data = data[:-1]
               pad = (-len(data)) % 4
               out = img / p.name[:-4]  # strip .b64
               out.write_bytes(base64.b64decode(data + ('=' * pad)))
