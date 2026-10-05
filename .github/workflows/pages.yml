@@ -38,11 +38,10 @@ jobs:
           img = Path('img')
           for p in sorted(img.glob('*.b64')):
               data = re.sub(r'\s+', '', p.read_text())
-              # Python rejects data-char count == 1 (mod 4); drop orphan char
               if len(data) % 4 == 1:
                   data = data[:-1]
               pad = (-len(data)) % 4
-              out = img / p.name[:-4]  # strip .b64
+              out = img / p.name[:-4]
               out.write_bytes(base64.b64decode(data + ('=' * pad)))
               p.unlink()
               print('wrote', out, out.stat().st_size)
@@ -55,6 +54,8 @@ jobs:
           PY
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
