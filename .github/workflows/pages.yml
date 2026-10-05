@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -18,48 +18,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch Inter fonts
+      - name: Build _site
         run: |
           set -euo pipefail
-          mkdir -p fonts
+          mkdir -p _site/fonts _site/img
           curl -fsSL -o /tmp/inter.zip https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
           unzip -qo /tmp/inter.zip -d /tmp/inter
-          cp "$(find /tmp/inter -name 'Inter-Regular.ttf' | head -1)" fonts/Inter-400.ttf
-          cp "$(find /tmp/inter -name 'Inter-Medium.ttf' | head -1)" fonts/Inter-500.ttf
-          cp "$(find /tmp/inter -name 'Inter-SemiBold.ttf' | head -1)" fonts/Inter-600.ttf
-          cp "$(find /tmp/inter -name 'Inter-Bold.ttf' | head -1)" fonts/Inter-700.ttf
-          cp "$(find /tmp/inter -name 'Inter-ExtraBold.ttf' | head -1)" fonts/Inter-800.ttf
-      - name: Decode images
-        run: |
-          set -euo pipefail
-          python3 << 'PY'
+          for w in "400 Regular" "500 Medium" "600 SemiBold" "700 Bold" "800 ExtraBold"; do
+            set -- $w
+            cp "$(find /tmp/inter -name "Inter-$2.ttf" | head -1)" "_site/fonts/Inter-$1.ttf"
+          done
+          python3 - <<'PY'
           from pathlib import Path
-          import base64, re
-          img = Path('img')
-          for p in sorted(img.glob('*.b64')):
-              data = re.sub(r'\s+', '', p.read_text())
-              if len(data) % 4 == 1:
-                  data = data[:-1]
-              pad = (-len(data)) % 4
-              out = img / p.name[:-4]
-              out.write_bytes(base64.b64decode(data + ('=' * pad)))
-              p.unlink()
-              print('wrote', out, out.stat().st_size)
-          for junk in list(img.glob('*.b64.p*')) + [Path('test.bin'), Path('img/_schema_probe.txt')]:
-              if junk.exists():
-                  junk.unlink()
-                  print('removed', junk)
-          Path('.nojekyll').write_text('')
-          Path('CNAME').write_text('evorie.ru\n')
+          import base64, re, shutil
+          src, dst = Path('img'), Path('_site/img')
+          for p in sorted(src.iterdir()):
+              if p.name.endswith('.b64'):
+                  data = re.sub(r'\s+', '', p.read_text())
+                  if len(data) % 4 == 1:
+                      data = data[:-1]
+                  data += '=' * ((-len(data)) % 4)
+                  out = dst / p.name[:-4]
+                  out.write_bytes(base64.b64decode(data))
+                  print('wrote', out, out.stat().st_size)
+              elif p.suffix in ('.svg', '.jpg', '.png', '.webp'):
+                  shutil.copy(p, dst / p.name)
+          for f in ('index.html', 'style.css'):
+              shutil.copy(f, Path('_site') / f)
+          Path('_site/.nojekyll').write_text('')
+          Path('_site/CNAME').write_text('evorie.ru\n')
           PY
+          ls -laR _site
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
+          cname: evorie.ru
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ./_site
   deploy:
     needs: build
     runs-on: ubuntu-latest
